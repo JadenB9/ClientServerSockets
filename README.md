@@ -9,39 +9,38 @@
 
 ---
 
-## 📋 Project Overview
+## Project Overview
 
 This project implements a basic client-server application using TCP sockets in C. The server listens for client connections, receives text messages, transforms them to uppercase, and sends the modified text back to the client. The implementation demonstrates fundamental socket programming concepts including socket creation, binding, listening, accepting connections, and data transmission.
 
-## 🎯 Assignment Requirements
+## Assignment Requirements
 
 All requirements have been successfully implemented:
 
-- ✅ **Custom Port**: Uses port **12345** (5-digit number < 65535)
-- ✅ **Command Line Input**: Client accepts input via command line arguments (not prompts)
-- ✅ **Data Transmission**: Client sends user input to server
-- ✅ **Data Reception**: Server receives data from client
-- ✅ **Data Transformation**: Server converts messages to uppercase
-- ✅ **Response Handling**: Server sends transformed data back to client
-- ✅ **Display Results**: Client displays server response
-- ✅ **Multiple Connections**: Server handles multiple consecutive client requests
-- ✅ **Server Persistence**: Server runs until explicitly terminated (Ctrl-C)
-- ✅ **Client Termination**: Client processes one request and exits
-- ✅ **Code Quality**: Proper commenting following Cedarville style guidelines
+- **Custom Port**: Uses port **19845** (5-digit number < 65535)
+- **Command Line Input**: Client accepts input via command line arguments (not prompts)
+- **Data Transmission**: Client sends user input to server
+- **Data Reception**: Server receives data from client
+- **Data Transformation**: Server converts messages to uppercase
+- **Response Handling**: Server sends transformed data back to client
+- **Display Results**: Client displays server response
+- **Multiple Connections**: Server handles multiple consecutive client requests
+- **Server Persistence**: Server runs until explicitly terminated (Ctrl-C)
+- **Client Termination**: Client processes one request and exits
+- **Code Quality**: Proper commenting following Cedarville style guidelines
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ClientServerSockets/
 ├── server.c          # TCP server implementation
 ├── client.c          # TCP client implementation
-├── Makefile          # Build configuration
 ├── README.md         # Project documentation (this file)
-├── server            # Compiled server executable (after make)
-└── client            # Compiled client executable (after make)
+├── server            # Compiled server executable
+└── client            # Compiled client executable
 ```
 
-## 🔧 Compilation Instructions
+## Compilation Instructions
 
 ### Prerequisites
 - GCC compiler
@@ -50,20 +49,6 @@ ClientServerSockets/
 
 ### Build Commands
 
-**Option 1: Using Makefile (Recommended)**
-```bash
-# Compile both programs
-make all
-
-# Compile individual programs
-make server    # Server only
-make client    # Client only
-
-# Clean compiled files
-make clean
-```
-
-**Option 2: Manual Compilation**
 ```bash
 # Compile server
 gcc -Wall -Wextra -std=c99 -pedantic -o server server.c
@@ -72,7 +57,7 @@ gcc -Wall -Wextra -std=c99 -pedantic -o server server.c
 gcc -Wall -Wextra -std=c99 -pedantic -o client client.c
 ```
 
-## 🚀 Execution Instructions
+## Execution Instructions
 
 ### Step 1: Start the Server
 ```bash
@@ -81,27 +66,24 @@ gcc -Wall -Wextra -std=c99 -pedantic -o client client.c
 
 **Expected Output:**
 ```
-Starting server on port 12345...
-Server listening on port 12345. Press Ctrl-C to quit.
+Starting server on port 19845...
+Server listening on port 19845. Press Ctrl-C to quit.
 ```
 
-The server will continue running and handle multiple client connections until terminated with Ctrl-C.
+### Step 2: Run the Client
 
-### Step 2: Run the Client (in a new terminal)
-
-**Syntax:**
 ```bash
 ./client "Your message here"
 ```
 
-**Required Usage Example:**
+**Example:**
 ```bash
 ./client "This is a message to be modified."
 ```
 
 **Expected Client Output:**
 ```
-Connecting to server at 127.0.0.1:12345...
+Connecting to server at 127.0.0.1:19845...
 Connected to server successfully.
 Sending message: "This is a message to be modified."
 Server response: "THIS IS A MESSAGE TO BE MODIFIED."
@@ -116,40 +98,35 @@ Sending back transformed message: THIS IS A MESSAGE TO BE MODIFIED.
 Client disconnected.
 ```
 
-## 🧪 Testing Examples
+## Testing Examples
 
-### Test Case 1: Basic Functionality
+### Basic Functionality
 ```bash
 ./client "Hello World! Testing multiple clients."
 ```
 
-### Test Case 2: Special Characters
+### Special Characters
 ```bash
 ./client "Test123!@# with numbers and symbols."
 ```
 
-### Test Case 3: Multiple Clients (run sequentially)
+### Multiple Clients
 ```bash
 ./client "First client message"
 ./client "Second client message"  
 ./client "Third client message"
 ```
 
-### Test Case 4: Error Handling
+### Error Handling
 ```bash
 ./client                                    # No arguments
 ./client "message" "extra argument"         # Too many arguments
 ```
 
-### Automated Testing
-```bash
-make test    # Runs automated test sequence
-```
-
-## 🏗️ Implementation Details
+## Implementation Details
 
 ### Server Features
-- **Port Configuration**: Listens on port 12345
+- **Port Configuration**: Listens on port 19845
 - **Socket Options**: Uses SO_REUSEADDR for quick restart capability
 - **Signal Handling**: Graceful shutdown on SIGINT (Ctrl-C)
 - **Connection Handling**: Accepts and processes multiple consecutive clients
@@ -158,7 +135,7 @@ make test    # Runs automated test sequence
 
 ### Client Features
 - **Command Line Interface**: Accepts message as command line argument
-- **Connection Management**: Connects to localhost (127.0.0.1) on port 12345
+- **Connection Management**: Connects to localhost (127.0.0.1) on port 19845
 - **Single Request Model**: Sends one message and exits after receiving response
 - **Input Validation**: Checks argument count and message length
 - **Error Reporting**: Clear error messages for connection failures
@@ -171,7 +148,7 @@ make test    # Runs automated test sequence
 5. Client receives response and displays it
 6. Connection closes automatically after single exchange
 
-## 📊 Technical Specifications
+## Technical Specifications
 
 - **Socket Type**: TCP (SOCK_STREAM)
 - **Address Family**: AF_INET (IPv4)
@@ -180,7 +157,7 @@ make test    # Runs automated test sequence
 - **Character Encoding**: ASCII
 - **Compilation Standard**: C99 with strict warnings enabled
 
-## 🔍 Code Quality Features
+## Code Quality Features
 
 - **Comprehensive Comments**: Function headers and inline documentation
 - **Error Handling**: All system calls checked for return values
@@ -189,43 +166,41 @@ make test    # Runs automated test sequence
 - **Signal Safety**: Clean shutdown handling
 - **Coding Standards**: Follows Cedarville University style guidelines
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
 **"Address already in use" Error:**
 ```bash
-make clean && make all    # Recompile
-# Or wait ~60 seconds for socket to be released
+# Wait ~60 seconds for socket to be released
 ```
 
 **"Connection refused" Error:**
 - Ensure server is running before starting client
-- Check that firewall allows connections on port 12345
+- Check that firewall allows connections on port 19845
 
 **Compilation Warnings:**
 - Minor newline warnings are cosmetic and don't affect functionality
 
-## 📝 Assignment Submission Checklist
+## Assignment Submission Checklist
 
-- ✅ Server and client source code (server.c, client.c)
-- ✅ Makefile for compilation
-- ✅ Comprehensive documentation (README.md)
-- ✅ Code follows Cedarville style guidelines
-- ✅ Proper header comments and inline documentation
-- ✅ All functional requirements implemented
-- ✅ Testing completed and verified
-- ✅ Screenshot of successful execution (see below)
+- Server and client source code (server.c, client.c)
+- Comprehensive documentation (README.md)
+- Code follows Cedarville style guidelines
+- Proper header comments and inline documentation
+- All functional requirements implemented
+- Testing completed and verified
+- Screenshot of successful execution (see below)
 
-## 📸 Execution Screenshot
+## Execution Screenshot
 
 The following demonstrates successful client-server communication:
 
 ```
 Terminal 1 (Server):
 $ ./server
-Starting server on port 12345...
-Server listening on port 12345. Press Ctrl-C to quit.
+Starting server on port 19845...
+Server listening on port 19845. Press Ctrl-C to quit.
 Client connected from 127.0.0.1:54321
 Received from client: This is a message to be modified.
 Sending back transformed message: THIS IS A MESSAGE TO BE MODIFIED.
@@ -233,7 +208,7 @@ Client disconnected.
 
 Terminal 2 (Client):
 $ ./client "This is a message to be modified."
-Connecting to server at 127.0.0.1:12345...
+Connecting to server at 127.0.0.1:19845...
 Connected to server successfully.
 Sending message: "This is a message to be modified."
 Server response: "THIS IS A MESSAGE TO BE MODIFIED."
@@ -242,7 +217,7 @@ Disconnected from server.
 
 ---
 
-## 📞 Contact Information
+## Contact Information
 
 **Student:** [Your Name]  
 **Email:** [Your Email]  

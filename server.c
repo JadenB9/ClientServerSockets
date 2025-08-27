@@ -18,7 +18,7 @@
 #include <ctype.h>
 #include <signal.h>
 
-#define PORT 12345          // Custom 5-digit port number
+#define PORT 19845          // Custom 5-digit port number
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 10
 
