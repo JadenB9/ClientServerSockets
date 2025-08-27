@@ -2,8 +2,8 @@
  * File: client.c
  * Author: [Your Name]
  * Date: August 27, 2025
- * Description: Battleship Game Client
- *              Interactive client for playing multiplayer Battleship
+ * Description: Mini Battleship Game Client
+ *              Interactive client with enhanced visuals, colors, and username system
  */
 
 #include <stdio.h>
@@ -17,95 +17,150 @@
 #include <pthread.h>
 
 #define PORT 19845
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 4096
 #define SERVER_IP "127.0.0.1"
+
+// ANSI color codes
+const char* RESET = "\033[0m";
+const char* BOLD = "\033[1m";
+const char* RED = "\033[91m";
+const char* GREEN = "\033[92m";
+const char* YELLOW = "\033[93m";
+const char* BLUE = "\033[94m";
+const char* MAGENTA = "\033[95m";
+const char* CYAN = "\033[96m";
+const char* WHITE = "\033[97m";
 
 int sockfd;
 int game_active = 1;
-int my_turn = 0;
+int waiting_for_username = 1;
 
-void print_instructions() {
-    printf("\n=== BATTLESHIP GAME ===\n");
-    printf("Commands:\n");
-    printf("  PLACE <size> <pos> <H|V> - Place a ship (e.g., PLACE 4 A1 H)\n");
-    printf("  ATTACK <pos>             - Attack enemy position (e.g., ATTACK B3)\n");
-    printf("  GRID                     - Show your grid\n");
-    printf("  ENEMY                    - Show enemy grid\n");
-    printf("  HELP                     - Show this help\n");
-    printf("  QUIT                     - Exit game\n");
-    printf("\nShip sizes: Carrier(4), Battleship(3), Destroyer(2), Destroyer(2), Submarine(1), Submarine(1)\n");
-    printf("Grid positions: A1-H8 (columns A-H, rows 1-8)\n");
-    printf("Orientation: H = Horizontal, V = Vertical\n");
-    printf("========================\n\n");
+void clear_screen(void) {
+    printf("\033[2J\033[H");
 }
 
-void print_ship_placement_guide() {
-    printf("\n=== SHIP PLACEMENT PHASE ===\n");
-    printf("Place your 6 ships on the 8x8 grid:\n");
-    printf("1. Carrier (4 spaces)    - PLACE 4 <pos> <H|V>\n");
-    printf("2. Battleship (3 spaces) - PLACE 3 <pos> <H|V>\n");
-    printf("3. Destroyer (2 spaces)  - PLACE 2 <pos> <H|V>\n");
-    printf("4. Destroyer (2 spaces)  - PLACE 2 <pos> <H|V>\n");
-    printf("5. Submarine (1 space)   - PLACE 1 <pos> <H|V>\n");
-    printf("6. Submarine (1 space)   - PLACE 1 <pos> <H|V>\n");
-    printf("\nExample: PLACE 4 A1 H (places carrier horizontally starting at A1)\n");
-    printf("============================\n");
+void print_banner(void) {
+    printf("%s%s", BOLD, CYAN);
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║                    🚢 MINI BATTLESHIP 🚢                     ║\n");
+    printf("║                      4x4 Grid • 1 Ship                      ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n");
+    printf("%s\n", RESET);
+}
+
+void print_instructions(void) {
+    printf("%s%s┌─ GAME RULES ─────────────────────────────────────────────┐%s\n", BOLD, YELLOW, RESET);
+    printf("%s│%s Each player places ONE ship (2 spaces) on a 4x4 grid     %s│%s\n", YELLOW, WHITE, YELLOW, RESET);
+    printf("%s│%s Ships can be placed horizontally (H) or vertically (V)   %s│%s\n", YELLOW, WHITE, YELLOW, RESET);
+    printf("%s│%s Take turns attacking enemy positions                     %s│%s\n", YELLOW, WHITE, YELLOW, RESET);
+    printf("%s│%s First to sink opponent's ship wins!                      %s│%s\n", YELLOW, WHITE, YELLOW, RESET);
+    printf("%s└─────────────────────────────────────────────────────────┘%s\n\n", YELLOW, RESET);
+    
+    printf("%s%s┌─ COMMANDS ───────────────────────────────────────────────┐%s\n", BOLD, GREEN, RESET);
+    printf("%s│%s PLACE <pos> <H|V> - Place ship (e.g., PLACE A1 H)       %s│%s\n", GREEN, WHITE, GREEN, RESET);
+    printf("%s│%s ATTACK <pos>      - Attack position (e.g., ATTACK B3)   %s│%s\n", GREEN, WHITE, GREEN, RESET);
+    printf("%s│%s GRID              - Show both grids                      %s│%s\n", GREEN, WHITE, GREEN, RESET);
+    printf("%s│%s HELP              - Show this help                       %s│%s\n", GREEN, WHITE, GREEN, RESET);
+    printf("%s│%s QUIT              - Exit game                            %s│%s\n", GREEN, WHITE, GREEN, RESET);
+    printf("%s└─────────────────────────────────────────────────────────┘%s\n\n", GREEN, RESET);
+}
+
+void print_placement_help(void) {
+    printf("%s%s┌─ SHIP PLACEMENT HELP ────────────────────────────────────┐%s\n", BOLD, MAGENTA, RESET);
+    printf("%s│%s Your ship is 2 spaces long                               %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s│%s                                                         %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s│%s Examples:                                                %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s│%s   PLACE A1 H  →  🚢🚢⬜⬜  (horizontal at A1-B1)        %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s│%s   PLACE C2 V  →  ⬜⬜🚢⬜  (vertical at C2-C3)          %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s│%s                  ⬜⬜🚢⬜                                %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s│%s                                                         %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s│%s Grid positions: A1, A2, A3, A4, B1, B2, B3, B4, etc.   %s│%s\n", MAGENTA, WHITE, MAGENTA, RESET);
+    printf("%s└─────────────────────────────────────────────────────────┘%s\n\n", MAGENTA, RESET);
 }
 
 void* receive_messages(void* arg) {
+    (void)arg;  // Suppress unused parameter warning
     char buffer[BUFFER_SIZE];
     
     while (game_active) {
         int bytes_received = recv(sockfd, buffer, BUFFER_SIZE - 1, 0);
         if (bytes_received <= 0) {
-            printf("Disconnected from server\n");
+            printf("\n%s%s🔌 Disconnected from server%s\n", BOLD, RED, RESET);
             game_active = 0;
             break;
         }
         
         buffer[bytes_received] = '\0';
         
-        char command[16], message[512];
+        char command[32], message[BUFFER_SIZE];
         if (sscanf(buffer, "%s %[^\n]", command, message) >= 1) {
             if (strcmp(command, "WELCOME") == 0) {
-                printf("Connected! %s\n", message);
+                clear_screen();
+                print_banner();
+                printf("%s\n", message + 8); // Skip "WELCOME " prefix
+                waiting_for_username = 1;
+            } else if (strcmp(command, "USERNAME_SET") == 0) {
+                printf("%s\n", message + 13); // Skip "USERNAME_SET " prefix
+                waiting_for_username = 0;
+                printf("%s%sWaiting for another player to join...%s\n", BOLD, YELLOW, RESET);
+            } else if (strcmp(command, "GAME_START") == 0) {
+                clear_screen();
+                print_banner();
+                printf("%s\n", message + 11); // Skip "GAME_START " prefix
+                print_placement_help();
+                printf("%s%s💡 Place your ship now!%s\n", BOLD, GREEN, RESET);
+            } else if (strcmp(command, "SHIP_PLACED") == 0) {
+                printf("%s\n", message + 12); // Skip "SHIP_PLACED " prefix
+            } else if (strcmp(command, "BATTLE_START") == 0) {
+                clear_screen();
+                print_banner();
+                printf("%s\n", message + 13); // Skip "BATTLE_START " prefix
                 print_instructions();
-            } else if (strcmp(command, "WAIT") == 0) {
-                printf("Waiting for another player to join...\n");
-            } else if (strcmp(command, "START") == 0) {
-                printf("\nGame starting! %s\n", message);
-                print_ship_placement_guide();
-            } else if (strcmp(command, "OK") == 0) {
-                printf("✓ %s\n", message);
-            } else if (strcmp(command, "READY") == 0) {
-                printf("All ships placed! %s\n", message);
-            } else if (strcmp(command, "BATTLE") == 0) {
-                printf("\n🚢 BATTLE BEGINS! %s\n", message);
-                my_turn = (strstr(message, "Your turn") != NULL);
-                if (my_turn) {
-                    printf("💥 It's your turn! Use ATTACK <pos> to fire!\n");
-                } else {
-                    printf("⏳ Wait for your opponent's move...\n");
-                }
+            } else if (strcmp(command, "YOUR_TURN") == 0) {
+                printf("\n%s%s🎯 YOUR TURN!%s Attack with: %sATTACK <pos>%s\n", 
+                    BOLD, GREEN, RESET, BOLD, RESET);
+                printf("%s> %s", BOLD, RESET);
+                fflush(stdout);
+            } else if (strcmp(command, "WAIT_TURN") == 0) {
+                printf("\n%s%s⏳ WAITING...%s %s\n", BOLD, YELLOW, RESET, message + 10);
+            } else if (strcmp(command, "CONTINUE") == 0) {
+                printf("\n%s%s🔥 KEEP FIRING!%s %s\n", BOLD, RED, RESET, message + 9);
+                printf("%s> %s", BOLD, RESET);
+                fflush(stdout);
             } else if (strcmp(command, "HIT") == 0) {
-                printf("🎯 HIT at %s!\n", message);
+                printf("\n%s\n", message + 4); // Skip "HIT " prefix
             } else if (strcmp(command, "MISS") == 0) {
-                printf("💧 MISS at %s\n", message);
-            } else if (strcmp(command, "TURN") == 0) {
-                printf("\n💥 Your turn! Attack with: ATTACK <pos>\n");
-                my_turn = 1;
+                printf("\n%s\n", message + 5); // Skip "MISS " prefix
             } else if (strcmp(command, "WIN") == 0) {
-                printf("\n🎉 VICTORY! %s\n", message);
+                printf("\n%s%s", BOLD, GREEN);
+                printf("╔══════════════════════════════════════════════════════════════╗\n");
+                printf("║                        🎉 VICTORY! 🎉                        ║\n");
+                printf("║                   You sunk their ship!                       ║\n");
+                printf("╚══════════════════════════════════════════════════════════════╝\n");
+                printf("%s\n", RESET);
                 game_active = 0;
             } else if (strcmp(command, "LOSE") == 0) {
-                printf("\n💀 DEFEAT! %s\n", message);
+                printf("\n%s%s", BOLD, RED);
+                printf("╔══════════════════════════════════════════════════════════════╗\n");
+                printf("║                        💀 DEFEAT 💀                         ║\n");
+                printf("║                   Your ship was sunk!                       ║\n");
+                printf("╚══════════════════════════════════════════════════════════════╝\n");
+                printf("%s\n", RESET);
                 game_active = 0;
+            } else if (strcmp(command, "GAME_OVER") == 0) {
+                printf("\n%s\n", message + 10); // Skip "GAME_OVER " prefix
+            } else if (strcmp(command, "ATTACK_RESULT") == 0) {
+                printf("%s%s📢 %s%s\n", BOLD, CYAN, message + 14, RESET);
             } else if (strcmp(command, "ERROR") == 0) {
-                printf("❌ Error: %s\n", message);
+                printf("\n%s%s❌ Error: %s%s\n", BOLD, RED, message + 6, RESET);
             } else if (strcmp(command, "GRID") == 0) {
-                printf("\n=== YOUR GRID ===\n");
-                printf("%s", buffer + 5); // Skip "GRID\n"
-                printf("=================\n");
+                printf("\n%s", buffer + 5); // Skip "GRID\n"
+            } else if (strcmp(command, "BOTH_GRIDS") == 0) {
+                clear_screen();
+                print_banner();
+                printf("%s", buffer + 11); // Skip "BOTH_GRIDS\n"
+                printf("%s> %s", BOLD, RESET);
+                fflush(stdout);
             } else {
                 printf("%s", buffer);
             }
@@ -113,7 +168,9 @@ void* receive_messages(void* arg) {
             printf("%s", buffer);
         }
         
-        fflush(stdout);
+        if (!waiting_for_username && game_active) {
+            fflush(stdout);
+        }
     }
     
     return NULL;
@@ -121,6 +178,15 @@ void* receive_messages(void* arg) {
 
 void send_command(const char* command) {
     send(sockfd, command, strlen(command), 0);
+}
+
+void print_prompt(void) {
+    if (waiting_for_username) {
+        printf("%s%s👤 Username: %s", BOLD, CYAN, RESET);
+    } else {
+        printf("%s> %s", BOLD, RESET);
+    }
+    fflush(stdout);
 }
 
 int main(void) {
@@ -142,7 +208,8 @@ int main(void) {
         exit(1);
     }
     
-    printf("Connecting to Battleship server at %s:%d...\n", SERVER_IP, PORT);
+    printf("%s%s🔗 Connecting to Mini Battleship server at %s:%d...%s\n", 
+        BOLD, CYAN, SERVER_IP, PORT, RESET);
     
     if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0) {
         perror("Connection failed");
@@ -155,11 +222,11 @@ int main(void) {
         exit(1);
     }
     
-    printf("Type 'HELP' for commands or 'QUIT' to exit\n");
+    // Wait a moment for the welcome message
+    usleep(100000);
     
     while (game_active) {
-        printf("> ");
-        fflush(stdout);
+        print_prompt();
         
         if (fgets(input, sizeof(input), stdin) == NULL) {
             break;
@@ -172,28 +239,60 @@ int main(void) {
             continue;
         }
         
-        if (strcmp(input, "QUIT") == 0) {
+        if (strcmp(input, "QUIT") == 0 || strcmp(input, "quit") == 0) {
             send_command("QUIT\n");
             game_active = 0;
             break;
-        } else if (strcmp(input, "HELP") == 0) {
-            print_instructions();
+        } else if (strcmp(input, "HELP") == 0 || strcmp(input, "help") == 0) {
+            if (!waiting_for_username) {
+                print_instructions();
+            }
             continue;
+        } else if (strcmp(input, "CLEAR") == 0 || strcmp(input, "clear") == 0) {
+            clear_screen();
+            print_banner();
+            continue;
+        }
+        
+        // Convert to uppercase for commands (but preserve username case)
+        if (!waiting_for_username) {
+            // Only convert command part to uppercase
+            char* space = strchr(input, ' ');
+            if (space) {
+                *space = '\0';
+                for (int i = 0; input[i]; i++) {
+                    if (input[i] >= 'a' && input[i] <= 'z') {
+                        input[i] = input[i] - 'a' + 'A';
+                    }
+                }
+                *space = ' ';
+            } else {
+                for (int i = 0; input[i]; i++) {
+                    if (input[i] >= 'a' && input[i] <= 'z') {
+                        input[i] = input[i] - 'a' + 'A';
+                    }
+                }
+            }
         }
         
         // Add newline for server protocol
         strcat(input, "\n");
         send_command(input);
         
-        // Reset turn flag after sending command
-        if (strncmp(input, "ATTACK", 6) == 0) {
-            my_turn = 0;
+        if (waiting_for_username) {
+            waiting_for_username = 0; // Will be reset by server response if needed
         }
     }
     
     pthread_cancel(recv_thread);
     close(sockfd);
-    printf("Goodbye!\n");
+    
+    printf("\n%s%s", BOLD, CYAN);
+    printf("╔══════════════════════════════════════════════════════════════╗\n");
+    printf("║                       👋 GOODBYE! 👋                         ║\n");
+    printf("║                   Thanks for playing!                        ║\n");
+    printf("╚══════════════════════════════════════════════════════════════╝\n");
+    printf("%s\n", RESET);
     
     return 0;
 }
