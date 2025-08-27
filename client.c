@@ -102,7 +102,8 @@ void* receive_messages(void* arg) {
             } else if (strcmp(command, "USERNAME_SET") == 0) {
                 printf("%s\n", message + 13); // Skip "USERNAME_SET " prefix
                 waiting_for_username = 0;
-                printf("%s%sWaiting for another player to join...%s\n", BOLD, YELLOW, RESET);
+            } else if (strcmp(command, "WAIT_PLAYER") == 0) {
+                printf("%s\n", message + 12); // Skip "WAIT_PLAYER " prefix
             } else if (strcmp(command, "GAME_START") == 0) {
                 clear_screen();
                 print_banner();

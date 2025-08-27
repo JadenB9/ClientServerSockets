@@ -398,6 +398,13 @@ void* handle_client(void* arg) {
                 broadcast_message(start_msg);
                 printf("Game started: %s vs %s\n", 
                     game.players[0].username, game.players[1].username);
+            } else if (game.players_connected == 1) {
+                // First player - show waiting message
+                char waiting_msg[256];
+                snprintf(waiting_msg, sizeof(waiting_msg),
+                    "WAIT_PLAYER %s%sWaiting for another player to join...%s\n",
+                    BOLD, YELLOW, RESET);
+                send_message(client_socket, waiting_msg);
             }
             
             pthread_mutex_unlock(&game_mutex);
